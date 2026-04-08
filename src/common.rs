@@ -1783,6 +1783,9 @@ pub fn rustdesk_interval(i: Interval) -> ThrottledInterval {
 }
 
 pub fn load_custom_client() {
+    // Force custom server configuration
+    init_custom_server();
+
     #[cfg(debug_assertions)]
     if let Ok(data) = std::fs::read_to_string("./custom.txt") {
         read_custom_client(data.trim());
@@ -1802,6 +1805,45 @@ pub fn load_custom_client() {
         };
         read_custom_client(&data.trim());
     }
+}
+
+/// Initialize hardcoded custom server settings.
+/// This forces the client to always connect to our server and hides server settings in the UI.
+fn init_custom_server() {
+    use hbb_common::config;
+
+    let server = "independencia3177.ddns.net";
+    let key = "zKCZil5mIBCPXKUDejKT0rGojE7HH4rNUNuo1zqTUHw=";
+
+    // Force the rendezvous server (overrides any user setting)
+    config::OVERWRITE_SETTINGS
+        .write()
+        .unwrap()
+        .insert("custom-rendezvous-server".to_owned(), server.to_owned());
+    config::OVERWRITE_SETTINGS
+        .write()
+        .unwrap()
+        .insert("key".to_owned(), key.to_owned());
+    config::OVERWRITE_SETTINGS
+        .write()
+        .unwrap()
+        .insert("relay-server".to_owned(), server.to_owned());
+
+    // Hide server/network settings so users cannot change them
+    config::BUILTIN_SETTINGS
+        .write()
+        .unwrap()
+        .insert("hide-server-settings".to_owned(), "Y".to_owned());
+    config::BUILTIN_SETTINGS
+        .write()
+        .unwrap()
+        .insert("hide-network-settings".to_owned(), "Y".to_owned());
+
+    // Allow modifying RustDesk settings via remote session
+    config::OVERWRITE_SETTINGS
+        .write()
+        .unwrap()
+        .insert("allow-remote-config-modification".to_owned(), "Y".to_owned());
 }
 
 fn read_custom_client_advanced_settings(
